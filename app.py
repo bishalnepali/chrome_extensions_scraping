@@ -8,6 +8,12 @@ import random
 from lxml import html
 import datetime
 import re
+from multiprocessing import Pool
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG, filename='chrome_extentions_scraping.log',
+format='%(asctime)s %(levelname)s:%(message)s')
 
 USER_AGENT_LIST = '''Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.94 Chrome/37.0.2062.94 Safari/537.36
 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36
@@ -32,15 +38,21 @@ Mozilla/5.0 (iPad; CPU OS 8_3 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Ge
 
 def get_response(url):
     headers = {'User-Agent':random.choice(USER_AGENT_LIST.split())}
-    res = requests.get(url,headers=headers)
-    if res.status_code == 200:
-        return res
-    else:
-        return
+    try:
+        res = requests.get(url,headers=headers)
+    except Exception as e:
+        logging.debug("Raised and error while requesting %s of url",url)
+        res = None
+    if res:
+        if res.status_code == 200:
+            return res
+        else:
+            return None
 def scrape_extension(extension_):
     '''It Scrapes all the extensions
     '''
     url = extension_['url']
+    logging.debug("this file has %s words", url)
     res = get_response(url)
     extenstion_details = {}
 
@@ -120,15 +132,22 @@ def scrape_extension(extension_):
         extension_['details'] = details
         return extension_
 
-
+    else:
+        logging.debug("No details were found for %s", url)
 def parse_ratings_sentence(text_file):
     '''This is for parsing the rating of this type of pattern
     ---Average rating 4.4 out of 5.  43,424 users rated this item.--
     '''
     rating_file = re.compile('rating (.*) out of')
-    rating_number = rating_file.findall(text_file)[0]
+    try:
+        rating_number = rating_file.findall(text_file)[0]
+    except:
+        rating_number = None
     rating_users_c = re.compile('5.(.*) users')
-    rating_users = rating_users_c.findall(text_file)[0]
+    try:
+        rating_users = rating_users_c.findall(text_file)[0]
+    except:
+        rating_users = None
     return rating_number, rating_users
 
 
@@ -137,9 +156,9 @@ def main(INPUT_FILE,start_end, end_place):
     '''
     list_of_url = read_json(INPUT_FILE)
     extenstion_details = []
-    for extension_url in list_of_url[start_end:end_place]:
-        sed = scrape_extension(extension_url)
-        print(sed)
+    #for extension_url in list_of_url[start_end:end_place]:
+    with Pool(5) as p:
+        sed = p.map(scrape_extension,list_of_url)
         extenstion_details.append(sed)
     with open(f'sample_chrome_extension_2021_03_04-{start_end}-{end_place}.json','w') as swp:
         json.dump(extenstion_details,swp, indent=2, ensure_ascii=True)
@@ -154,4 +173,4 @@ def read_json(INPUT_FILE):
     print("Main file started!!!")
 if __name__ == "__main__":
     INPUT_FILE = './input_file/extensions.json'
-    main(INPUT_FILE,0,5)
+    main(INPUT_FILE,0,10000)
