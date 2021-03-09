@@ -52,6 +52,7 @@ def scrape_extension(extension_):
     '''It Scrapes all the extensions
     '''
     url = extension_['url']
+    print('Scraping::',url)
     logging.debug("this file has %s words", url)
     res = get_response(url)
     extenstion_details = {}
