@@ -130,6 +130,7 @@ def scrape_extension(extension_):
             'updated_date':datetime.date.today().strftime('%Y-%m-%d')
         }
         extension_['details'] = details
+        logging.debug("Done sraping %s",url)
         return extension_
 
     else:
