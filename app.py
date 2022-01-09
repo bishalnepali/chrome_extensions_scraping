@@ -60,29 +60,32 @@ def scrape_extension(extension_):
     if res:
         page = html.fromstring(res.content.decode('utf-8'))
         try:
-            name = page.xpath("//h1/text()")[0]
+            name = page.xpath("//h1/text()")[0].strip()
         except:
             name = None
         try:
-            website = page.xpath('//a[@class="e-f-y"]/@href')[0]
+            website = page.xpath('//a[@class="e-f-y"]/@href')[0].strip()
         except:
             website = None
         try:
-            offered_by = page.xpath('//a[@class="e-f-y"]/text()')[0]
+            offered_by = page.xpath('//a[@class="e-f-y"]/text()')[0].strip()
 
         except:
             offered_by = None
 
-        img_url = page.xpath('//img/@src')[0]
         try:
-            rating_sentence = page.xpath('//span[contains(@aria-label,"rating")]/@aria-label')[0]
+            img_url = page.xpath('//img/@src')[0].strip()
+        except:
+            img_url = None
+        try:
+            rating_sentence = page.xpath('//span[contains(@aria-label,"rating")]/@aria-label')[0].strip()
         except:
             rating_sentence = 'Not Found the rating'
         ratings, rating_count = parse_ratings_sentence(rating_sentence)
        
         try:
             users = page.xpath(
-                '//span[@class="e-f-ih"]/text()')[0].replace('users', '')
+                '//span[@class="e-f-ih"]/text()')[0].replace('users', '').strip()
         except:
             users = None
 
@@ -90,12 +93,12 @@ def scrape_extension(extension_):
         # size = page.xpath('//span[@class="C-b-p-D-Xe h-C-b-p-D-za"]/text()')
         try:
             update_date = page.xpath(
-                '//span[text()="Updated:"]/following-sibling::span/text()')[0]
+                '//span[text()="Updated:"]/following-sibling::span/text()')[0].strip()
         except:
             update_date = None
         try:
             size = page.xpath(
-                '//span[text()="Size:"]/following-sibling::span/text()')[0]
+                '//span[text()="Size:"]/following-sibling::span/text()')[0].strip()
         except:
             size = None
         try:
@@ -105,7 +108,7 @@ def scrape_extension(extension_):
             languages = None
         try:
             developer_address = page.xpath(
-                '//div[text()="Developer"]/following-sibling::div/a/@href')[0]
+                '//div[text()="Developer"]/following-sibling::div/a/@href')[0].strip()
         except:
             developer_address = None
         if developer_address:
@@ -158,11 +161,11 @@ def main(INPUT_FILE,start_end, end_place):
     '''
     list_of_url = read_json(INPUT_FILE)
     extenstion_details = []
-    #for extension_url in list_of_url[start_end:end_place]:
-    with Pool(5) as p:
+    list_of_url = list_of_url[start_end:end_place]
+    with Pool(15) as p:
         sed = p.map(scrape_extension,list_of_url)
         extenstion_details.append(sed)
-    with open(f'sample_chrome_extension_2021_03_04-{start_end}-{end_place}.json','w') as swp:
+    with open(f'sample_chrome_extension_2022_12_08-{start_end}-{end_place}.json','w') as swp:
         json.dump(extenstion_details,swp, indent=2, ensure_ascii=True)
 def read_json(INPUT_FILE):
     '''Returns the list of extensions
@@ -172,7 +175,8 @@ def read_json(INPUT_FILE):
 
     return json_file
 
-    print("Main file started!!!")
+   
 if __name__ == "__main__":
-    INPUT_FILE = './input_file/extensions.json'
-    main(INPUT_FILE,0,10000)
+    print("Main file started!!!")
+    INPUT_FILE = 'extensions_2021.json'
+    main(INPUT_FILE,100000,1000000)
