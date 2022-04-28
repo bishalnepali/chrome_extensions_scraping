@@ -10,8 +10,10 @@ import datetime
 import re
 from multiprocessing import Pool
 import logging
+import time
+import sys
 
-
+RESTING_TIME = 10
 logging.basicConfig(level=logging.DEBUG, filename='chrome_extentions_scraping.log',
 format='%(asctime)s %(levelname)s:%(message)s')
 
@@ -47,6 +49,8 @@ def get_response(url):
         if res.status_code == 200:
             return res
         else:
+            breakpoint()
+            time.sleep(5)
             return None
 def scrape_extension(extension_):
     '''It Scrapes all the extensions
@@ -55,8 +59,6 @@ def scrape_extension(extension_):
     print('Scraping::',url)
     logging.debug("this file has %s words", url)
     res = get_response(url)
-    extenstion_details = {}
-
     if res:
         page = html.fromstring(res.content.decode('utf-8'))
         try:
@@ -162,11 +164,14 @@ def main(INPUT_FILE,start_end, end_place):
     list_of_url = read_json(INPUT_FILE)
     extenstion_details = []
     list_of_url = list_of_url[start_end:end_place]
-    with Pool(15) as p:
-        sed = p.map(scrape_extension,list_of_url)
-        extenstion_details.append(sed)
-    with open(f'sample_chrome_extension_2022_12_08-{start_end}-{end_place}.json','w') as swp:
-        json.dump(extenstion_details,swp, indent=2, ensure_ascii=True)
+    # with Pool(15) as p:
+    #     sed = p.map(scrape_extension,list_of_url)
+    #     extenstion_details.append(sed)
+    for url in list_of_url:
+        extenstion_details.append(scrape_extension(url))
+        today_date = datetime.date.today().strftime('%Y-%m-%d')
+        with open(f'chrome_extension_{today_date}-{start_end}-{end_place}.json','w') as swp:
+            json.dump(extenstion_details,swp, indent=2, ensure_ascii=True)
 def read_json(INPUT_FILE):
     '''Returns the list of extensions
     '''
@@ -177,6 +182,9 @@ def read_json(INPUT_FILE):
 
    
 if __name__ == "__main__":
+    start,end = sys.argv[1],sys.argv[2]
+    start = int(start)
+    end = int(end)
     print("Main file started!!!")
     INPUT_FILE = 'extensions_2021.json'
-    main(INPUT_FILE,100000,1000000)
+    main(INPUT_FILE,start,end)
